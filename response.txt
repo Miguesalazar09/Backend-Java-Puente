@@ -1,0 +1,1 @@
+{"id":"f5ec9e60-d20e-41c6-80ed-eaa65384c02a","name":"Test User","email":"testuser@example.com","pass":"$2a$10$Gcy6n1TVVYyYgePvQjdYa.L7jiIGi1yUr6GYSi7shzVPp9o8.Pq3i","role":"USER"}
