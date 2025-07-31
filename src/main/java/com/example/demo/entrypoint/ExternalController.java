@@ -3,8 +3,11 @@ package com.example.demo.entrypoint;
 import com.example.demo.application.usecase.ExternalDataUseCase;
 import com.example.demo.infrastructure.external.dto.InstrumentListDTO;
 import com.example.demo.infrastructure.external.dto.SymbolDataDTO;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.regex.Pattern;
 
 /**
  * Controller para exponer datos de Alpha Vantage API
@@ -13,6 +16,9 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/external")
 public class ExternalController {
+
+    // Patrón para validar símbolos bursátiles (letras, números, puntos, guiones)
+    private static final Pattern SYMBOL_PATTERN = Pattern.compile("^[A-Za-z0-9.-]{1,10}$");
 
     private final ExternalDataUseCase externalDataUseCase;
 
@@ -45,15 +51,22 @@ public class ExternalController {
 
     @GetMapping("/instruments/{symbol}")
     public ResponseEntity<ApiResponse<SymbolDataDTO>> getSymbolData(@PathVariable String symbol) {
+        // Validar formato del símbolo
+        ValidationResult formatValidation = validateSymbolFormat(symbol);
+        if (!formatValidation.isValid()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiResponse<>(false, formatValidation.message(), null));
+        }
+        
         try {
-            SymbolDataDTO symbolData = externalDataUseCase.getSymbolData(symbol);
-            return ResponseEntity.ok(new ApiResponse<>(true, "Datos del símbolo " + symbol + " obtenidos exitosamente", symbolData));
+            SymbolDataDTO symbolData = externalDataUseCase.getSymbolData(symbol.toUpperCase());
+            return ResponseEntity.ok(new ApiResponse<>(true, "Datos del símbolo " + symbol.toUpperCase() + " obtenidos exitosamente", symbolData));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
                 .body(new ApiResponse<>(false, "Error: " + e.getMessage(), null));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest()
-                .body(new ApiResponse<>(false, "Error: " + e.getMessage(), null));
+                .body(new ApiResponse<>(false, "Error al obtener datos para símbolo " + symbol.toUpperCase() + ": " + e.getMessage(), null));
         }
     }
 
@@ -94,6 +107,26 @@ public class ExternalController {
                 .body(new ApiResponse<>(false, "Error: " + e.getMessage(), null));
         }
     }
+
+    /**
+     * Valida el formato del símbolo bursátil
+     * Mismas reglas que en FavoriteController
+     */
+    private ValidationResult validateSymbolFormat(String symbol) {
+        if (symbol == null || symbol.trim().isEmpty()) {
+            return new ValidationResult(false, "El símbolo no puede estar vacío");
+        }
+        
+        String trimmedSymbol = symbol.trim();
+        if (!SYMBOL_PATTERN.matcher(trimmedSymbol).matches()) {
+            return new ValidationResult(false, "Formato de símbolo inválido. Debe contener solo letras, números, puntos y guiones (máximo 10 caracteres)");
+        }
+        
+        return new ValidationResult(true, "Formato válido");
+    }
+
+    // Records para validación y respuesta
+    record ValidationResult(boolean isValid, String message) {}
 
     // DTO para respuestas consistentes con el resto de la aplicación
     public record ApiResponse<T>(boolean success, String message, T data) {}

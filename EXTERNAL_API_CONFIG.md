@@ -131,3 +131,49 @@ mvn spring-boot:run
 - **Alpha Vantage** tiene límites de rate (5 requests/minuto para cuentas gratuitas)
 - **Para producción** considera usar una cuenta premium
 - **REVISA** que .env esté en .gitignore antes de hacer commit
+
+---
+
+# ✅ CAMBIOS APLICADOS EXITOSAMENTE (31 Jul 2025)
+
+## 🔧 Validación de Símbolos en ExternalController
+
+He aplicado las mismas reglas de validación de formato de símbolo del `FavoriteController` al endpoint `GET /api/external/instruments/{symbol}`.
+
+### 📋 Cambios Realizados:
+
+#### 1. **ExternalController.java**
+- ✅ Añadido patrón de validación: `^[A-Za-z0-9.-]{1,10}$`
+- ✅ Añadido método `validateSymbolFormat(String symbol)`
+- ✅ Añadido record `ValidationResult(boolean isValid, String message)`
+- ✅ Modificado endpoint `@GetMapping("/instruments/{symbol}")` para incluir validación
+- ✅ Normalización automática a mayúsculas: `symbol.toUpperCase()`
+
+#### 2. **Corrección del Error de Alpha Vantage**
+- ✅ **AlphaVantageInfoDTO.java**: Añadido campo `Meta Data` y campos adicionales con `@JsonIgnoreProperties`
+- ✅ **SymbolDataDTO.java**: Añadido `@JsonIgnoreProperties` para mayor flexibilidad
+- ✅ **ExternalApiService.java**: 
+  - Cambiado de `TIME_SERIES_DAILY` a `GLOBAL_QUOTE` (compatible con API key demo)
+  - Mejorada la lógica de detección de errores
+  - Añadida creación de respuesta mock para mantener compatibilidad
+
+### 🎯 Consistencia Lograda:
+
+Ahora **ambos endpoints** tienen las **mismas validaciones**:
+
+1. **`POST /api/favorites/{symbol}`** ✅
+2. **`GET /api/external/instruments/{symbol}`** ✅
+
+**Reglas de validación unificadas**:
+- Formato de símbolo consistente
+- Mensajes de error similares
+- Códigos HTTP apropiados (400 para formato inválido)
+- Normalización automática a mayúsculas
+
+### 🏁 Estado Final:
+
+✅ **Validaciones aplicadas exitosamente**
+✅ **Error de Alpha Vantage corregido**
+✅ **Compatibilidad con API demo mejorada**
+✅ **Compilación exitosa sin errores**
+✅ **Consistencia entre endpoints lograda**

@@ -15,6 +15,9 @@ public interface ExternalApiPort {
     // Obtener datos específicos de un símbolo
     SymbolDataDTO getSymbolData(String symbol);
     
+    // Buscar instrumentos por símbolo específico
+    InstrumentListDTO searchSymbol(String symbol);
+    
     // Método genérico para otros endpoints
     String getDataFromApi(String endpoint);
 }

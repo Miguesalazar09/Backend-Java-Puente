@@ -1,155 +1,228 @@
-# 🚀 Sistema de Gestión de Usuarios con Spring Boot
+# Demo Spring Boot - API de Gestión de Usuarios y Favoritos Financieros
 
-Sistema completo de autenticación y gestión de usuarios con JWT, control de acceso basado en roles (RBAC) y endpoints RESTful.
+## 📋 Descripción
 
-## ✨ Características Principales
+Esta aplicación Spring Boot implementa una API REST robusta para la gestión de usuarios y favoritos de instrumentos financieros, con integración a la API de Alpha Vantage para validación de símbolos bursátiles en tiempo real.
 
-- 🔐 **Autenticación JWT** - Tokens seguros para acceso
-- 👥 **Sistema de Roles** - USER y ADMIN con permisos diferenciados  
-- 🛡️ **Control de Acceso** - Endpoints protegidos según rol
-- 👤 **Gestión de Perfil** - Los usuarios pueden ver y actualizar su propio perfil
-- 🔒 **Seguridad Robusta** - Validaciones, encriptación de contraseñas con BCrypt
-- 📊 **CRUD Administrativo** - Gestión completa de usuarios para administradores
+### 🎯 Características Principales
 
-## 🛠️ Tecnologías Utilizadas
+- **Arquitectura Clean Architecture**: Separación clara de responsabilidades en capas (Domain, Application, Infrastructure, Entrypoint)
+- **Seguridad JWT**: Autenticación y autorización basada en tokens JWT
+- **Validación Robusta**: Validaciones exhaustivas de datos de entrada y reglas de negocio
+- **Integración Externa**: Consulta real a Alpha Vantage API para validación de símbolos financieros
+- **Gestión de Roles**: Sistema de roles (USER, ADMIN) con permisos diferenciados
+- **Base de Datos**: PostgreSQL con JPA/Hibernate
 
-- **Java 17+**
-- **Spring Boot 3.5.4**
-- **Spring Security 6** 
-- **Spring Data JPA**
-- **PostgreSQL**
-- **JWT (JSON Web Tokens)**
-- **BCrypt** para encriptación
-- **Maven** para gestión de dependencias
-- **Docker** para base de datos
-
-## 📋 Endpoints Implementados
-
-### 🔓 Públicos
-- `POST /api/users` - Registro de usuarios
-- `POST /api/auth/login` - Login con JWT
-
-### 🔒 Autenticados (USER + ADMIN)
-- `GET /api/users/profile` - Ver mi perfil
-- `PUT /api/users/profile` - Actualizar mi perfil
-
-### 🛡️ Solo ADMIN
-- `GET /api/admin/users` - Lista todos los usuarios
-- `POST /api/admin/users` - Crear usuarios con cualquier rol
-- `GET /api/admin/users/{id}` - Ver usuario específico
-- `PUT /api/admin/users/{id}` - Actualizar cualquier usuario
-- `DELETE /api/admin/users/{id}` - Eliminar usuarios
-
-## 🚀 Cómo Ejecutar
+## 🚀 Instalación y Configuración
 
 ### Prerrequisitos
-- Java 17+
-- Docker y Docker Compose
-- Maven
 
-### 1. Clonar el repositorio
-\`\`\`bash
-git clone https://github.com/tuusuario/tu-repo.git
-cd tu-repo
-\`\`\`
+- **Java 17** o superior
+- **Maven 3.6** o superior
+- **PostgreSQL 12** o superior
+- **Clave API de Alpha Vantage** (gratuita en [alphavantage.co](https://www.alphavantage.co/support/#api-key))
 
-### 2. Iniciar la base de datos
-\`\`\`bash
-docker-compose up -d
-\`\`\`
+### 1. Configuración de Base de Datos
 
-### 3. Ejecutar la aplicación
-\`\`\`bash
+```bash
+# Crear base de datos PostgreSQL
+sudo -u postgres psql
+CREATE DATABASE demo;
+CREATE USER postgres WITH ENCRYPTED PASSWORD 'postgres123';
+GRANT ALL PRIVILEGES ON DATABASE demo TO postgres;
+\q
+```
+
+### 2. Configuración de Variables de Entorno
+
+```bash
+# Configurar API Key de Alpha Vantage
+export ALPHA_VANTAGE_API_KEY=tu_api_key_aqui
+
+# Opcional: Habilitar scheduler automático
+export ENABLE_SCHEDULER=false
+```
+
+### 3. Instalación y Ejecución
+
+```bash
+# Clonar el repositorio
+git clone <url-del-repositorio>
+cd demo
+
+# Compilar el proyecto
+./mvnw clean compile
+
+# Ejecutar la aplicación
 ./mvnw spring-boot:run
-\`\`\`
+```
 
-La aplicación estará disponible en `http://localhost:8080`
+La aplicación estará disponible en: `http://localhost:8080`
 
-## 📖 Uso de la API
+### 4. Configuración Docker (Opcional)
 
-### Registro de Usuario
-\`\`\`bash
-curl -X POST http://localhost:8080/api/users \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "name": "Juan Pérez",
-    "email": "juan@example.com",
-    "password": "password123"
-  }'
-\`\`\`
+```bash
+# Construir imagen
+docker build -t demo-app .
 
-### Login
-\`\`\`bash
-curl -X POST http://localhost:8080/api/auth/login \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "email": "juan@example.com",
-    "password": "password123"
-  }'
-\`\`\`
+# Ejecutar con Docker Compose
+docker-compose up -d
+```
 
-### Ver Mi Perfil
-\`\`\`bash
-curl -X GET http://localhost:8080/api/users/profile \\
-  -H "Authorization: Bearer {tu_jwt_token}"
-\`\`\`
+## 🏗️ Arquitectura del Sistema
 
-### Actualizar Mi Perfil
-\`\`\`bash
-curl -X PUT http://localhost:8080/api/users/profile \\
-  -H "Authorization: Bearer {tu_jwt_token}" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "name": "Nuevo Nombre",
-    "email": "nuevo@email.com"
-  }'
-\`\`\`
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        ENTRYPOINT LAYER                     │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐           │
+│  │   Auth      │ │    Admin    │ │  External   │           │
+│  │ Controller  │ │ Controller  │ │ Controller  │  ...      │
+│  └─────────────┘ └─────────────┘ └─────────────┘           │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+┌─────────────────────┴───────────────────────────────────────┐
+│                     APPLICATION LAYER                       │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐           │
+│  │  Favorite   │ │    User     │ │  External   │           │
+│  │   Service   │ │   Service   │ │  Data Use   │  ...      │
+│  │             │ │             │ │    Case     │           │
+│  └─────────────┘ └─────────────┘ └─────────────┘           │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+┌─────────────────────┴───────────────────────────────────────┐
+│                       DOMAIN LAYER                          │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐           │
+│  │    User     │ │  Favorite   │ │    Ports    │           │
+│  │   Entity    │ │   Entity    │ │(Interfaces) │  ...      │
+│  └─────────────┘ └─────────────┘ └─────────────┘           │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+┌─────────────────────┴───────────────────────────────────────┐
+│                   INFRASTRUCTURE LAYER                      │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐           │
+│  │     JPA     │ │   Alpha     │ │   Security  │           │
+│  │Repositories │ │  Vantage    │ │   Config    │  ...      │
+│  │             │ │   Service   │ │             │           │
+│  └─────────────┘ └─────────────┘ └─────────────┘           │
+└─────────────────────────────────────────────────────────────┘
+```
 
-## 🔒 Características de Seguridad
+### Flujo de Datos Principal
 
-- ✅ **Contraseñas encriptadas** con BCrypt
-- ✅ **Tokens JWT** con expiración
-- ✅ **Validación de roles** en cada endpoint
-- ✅ **Prevención de escalación de privilegios**
-- ✅ **Detección de intentos de cambio de rol**
-- ✅ **Validación de datos de entrada**
+1. **Entrypoint**: Recibe requests HTTP, valida formato y autorización
+2. **Application**: Ejecuta lógica de negocio y coordina servicios
+3. **Domain**: Define entidades y reglas de negocio centrales
+4. **Infrastructure**: Maneja persistencia y servicios externos
 
-## 🏗️ Arquitectura
+## 📚 API Endpoints
 
-El proyecto sigue una **arquitectura hexagonal** (Clean Architecture):
+### 🔐 Autenticación
 
-- **Entrypoint** - Controllers REST
-- **Application** - Casos de uso y servicios
-- **Domain** - Modelos y puertos 
-- **Infrastructure** - Repositorios, seguridad, configuración
+| Método | Endpoint | Descripción | Roles |
+|--------|----------|-------------|-------|
+| POST | `/api/users` | Registro de usuario | Público |
+| POST | `/api/auth/login` | Inicio de sesión | Público |
 
-## 📝 Características Especiales
+### 👤 Gestión de Usuarios
 
-### Gestión de Perfil de Usuario
-- Los usuarios pueden actualizar su propio perfil sin especificar ID
-- Se detectan y registran intentos de cambio de rol
-- Mensajes informativos sobre qué campos se actualizaron
+| Método | Endpoint | Descripción | Roles |
+|--------|----------|-------------|-------|
+| GET | `/api/users/profile` | Obtener perfil | USER, ADMIN |
+| PUT | `/api/users/profile` | Actualizar perfil | USER, ADMIN |
 
-### Validaciones Robustas
-- Campos obligatorios validados
-- Emails únicos en el sistema
-- Prevención de creación de admins en registro público
-- Manejo de errores con mensajes claros
+### 🛡️ Administración
 
-## 🤝 Contribuir
+| Método | Endpoint | Descripción | Roles |
+|--------|----------|-------------|-------|
+| POST | `/api/admin/users` | Crear usuario | ADMIN |
+| GET | `/api/admin/users/{id}` | Obtener usuario | ADMIN |
+| PUT | `/api/admin/users/{id}` | Actualizar usuario | ADMIN |
+| DELETE | `/api/admin/users/{id}` | Eliminar usuario | ADMIN |
 
-1. Fork del proyecto
-2. Crear rama para feature (`git checkout -b feature/AmazingFeature`)
-3. Commit de cambios (`git commit -m 'Add AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abrir Pull Request
+### ⭐ Favoritos
 
-## 📄 Licencia
+| Método | Endpoint | Descripción | Roles |
+|--------|----------|-------------|-------|
+| POST | `/api/favorites/{symbol}` | Agregar favorito | USER, ADMIN |
+| GET | `/api/favorites` | Listar favoritos | USER, ADMIN |
+| DELETE | `/api/favorites/{symbol}` | Eliminar favorito | USER, ADMIN |
 
-Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para detalles.
+### 📊 Datos Externos
 
-## 👨‍💻 Autor
+| Método | Endpoint | Descripción | Roles |
+|--------|----------|-------------|-------|
+| GET | `/api/external/instruments/{symbol}` | Datos de símbolo | USER, ADMIN |
 
-Tu Nombre - [@tu_usuario](https://github.com/tu_usuario)
+## 🔒 Validaciones Implementadas
 
-Enlace del Proyecto: [https://github.com/tu_usuario/tu-repo](https://github.com/tu_usuario/tu-repo)
+### 🎯 Validaciones de Negocio
+
+#### 1. **Registro de Usuarios**
+- ✅ Email único en el sistema
+- ✅ Formato de email válido
+- ✅ Campos obligatorios (username, email, password)
+- ✅ Longitud mínima de contraseña
+
+#### 2. **Gestión Administrativa**
+- ✅ Validación de formato UUID en endpoints admin
+- ✅ Verificación de existencia de usuario antes de operaciones
+- ✅ Validación de unicidad de email en creación/actualización
+
+#### 3. **Símbolos Financieros**
+- ✅ Formato de símbolo válido (1-10 caracteres alfanuméricos)
+- ✅ **Validación real con Alpha Vantage API**
+- ✅ Verificación de existencia del símbolo antes de agregar a favoritos
+- ✅ Manejo de errores de API externa con fallback
+
+
+## 🛠️ Decisiones Técnicas
+
+### 1. **Arquitectura Clean**
+**Justificación**: Permite testabilidad, mantenibilidad y evolución independiente de cada capa.
+
+**Beneficios**:
+- Separación clara de responsabilidades
+- Facilita testing unitario y de integración
+- Independencia de frameworks externos
+- Escalabilidad a largo plazo
+
+### 2. **Validación en Tiempo Real con Alpha Vantage**
+**Justificación**: Garantiza que solo símbolos válidos y existentes sean agregados al sistema.
+
+**Implementación**:
+```java
+public ValidationResult validateSymbolExists(String symbol) {
+    try {
+        GlobalQuoteDTO quote = getGlobalQuote(symbol);
+        return quote != null && quote.getSymbol() != null ? 
+            ValidationResult.valid() : 
+            ValidationResult.invalid("Símbolo no encontrado en Alpha Vantage");
+    } catch (Exception e) {
+        return ValidationResult.invalid("Error al validar símbolo: " + e.getMessage());
+    }
+}
+```
+
+### 3. **Manejo de Errores HTTP Semánticos**
+**Justificación**: Mejora la experiencia del desarrollador y facilita debugging.
+
+**Códigos implementados**:
+- `400 Bad Request`: Datos de entrada inválidos
+- `401 Unauthorized`: Falta de autenticación
+- `403 Forbidden`: Permisos insuficientes
+- `404 Not Found`: Recurso no encontrado
+- `409 Conflict`: Conflicto (ej: email duplicado)
+- `422 Unprocessable Entity`: Validación de negocio fallida
+- `500 Internal Server Error`: Errores del servidor
+
+### 4. **DTOs y Record Classes**
+**Justificación**: Inmutabilidad, claridad en contratos de API y mejor performance.
+
+```java
+public record GlobalQuoteDTO(
+    @JsonProperty("01. symbol") String symbol,
+    @JsonProperty("02. open") String open,
+    @JsonProperty("05. price") String price,
+    // ... otros campos
+) {}
+```

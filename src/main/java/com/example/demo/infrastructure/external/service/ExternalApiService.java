@@ -6,6 +6,7 @@ import com.example.demo.infrastructure.external.dto.InstrumentListDTO;
 import com.example.demo.infrastructure.external.dto.InstrumentDTO;
 import com.example.demo.infrastructure.external.dto.SymbolDataDTO;
 import com.example.demo.infrastructure.external.dto.AlphaVantageInfoDTO;
+import com.example.demo.infrastructure.external.dto.GlobalQuoteDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -36,8 +37,7 @@ public class ExternalApiService implements ExternalApiPort {
     public InstrumentListDTO getAllInstruments() {
         try {
             // Lista de símbolos predefinidos para buscar
-            //String[] symbols = {"AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "NVDA", "NFLX"};
-            String[] symbols = {"AAPL", "MSFT", "GOOGL"};
+            String[] symbols = {"AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "NVDA", "NFLX", "JPM", "V", "PG", "JNJ", "WMT", "BAC", "KO", "DIS", "INTC", "Z", "T", "PFE", "MRK"};
 
             List<InstrumentDTO> allInstruments = new ArrayList<>();
             
@@ -69,7 +69,8 @@ public class ExternalApiService implements ExternalApiPort {
         }
     }
     
-    private InstrumentListDTO searchSymbol(String symbol) {
+    @Override
+    public InstrumentListDTO searchSymbol(String symbol) {
         try {
             String url = String.format("%s/query?function=SYMBOL_SEARCH&keywords=%s&apikey=%s",
                 apiConfig.getAlphavantage().getBaseUrl(),
@@ -95,8 +96,8 @@ public class ExternalApiService implements ExternalApiPort {
     @Override
     public SymbolDataDTO getSymbolData(String symbol) {
         try {
-            // Endpoint para obtener datos diarios de un símbolo
-            String url = String.format("%s/query?function=TIME_SERIES_DAILY&symbol=%s&apikey=%s",
+            // Usar GLOBAL_QUOTE en lugar de TIME_SERIES_DAILY para compatibilidad con API key demo
+            String url = String.format("%s/query?function=GLOBAL_QUOTE&symbol=%s&apikey=%s",
                 apiConfig.getAlphavantage().getBaseUrl(),
                 symbol,
                 apiConfig.getAlphavantage().getApiKey());
@@ -104,7 +105,7 @@ public class ExternalApiService implements ExternalApiPort {
             String response = restTemplate.getForObject(url, String.class);
             System.out.println("🔍 RESPUESTA SYMBOL DATA: " + response);
             
-            // Verificar si es un mensaje de información
+            // Verificar si es un mensaje de error
             if (response.contains("Information") || response.contains("Note") || response.contains("Error Message")) {
                 AlphaVantageInfoDTO info = objectMapper.readValue(response, AlphaVantageInfoDTO.class);
                 String message = info.information() != null ? info.information() : 
@@ -112,12 +113,63 @@ public class ExternalApiService implements ExternalApiPort {
                 throw new RuntimeException("Alpha Vantage: " + message);
             }
             
+            // Parsear la respuesta de GLOBAL_QUOTE
+            if (response.contains("Global Quote")) {
+                GlobalQuoteDTO globalQuoteResponse = objectMapper.readValue(response, GlobalQuoteDTO.class);
+                
+                if (globalQuoteResponse.globalQuote() != null) {
+                    // Convertir GlobalQuote a SymbolDataDTO para mantener compatibilidad
+                    return convertGlobalQuoteToSymbolData(globalQuoteResponse, symbol);
+                } else {
+                    throw new RuntimeException("Respuesta de Global Quote vacía para símbolo: " + symbol);
+                }
+            }
+            
+            // Si no contiene Global Quote, verificar si hay datos válidos
+            if (response.contains("{}") || response.trim().equals("{}")) {
+                throw new RuntimeException("No se encontraron datos para el símbolo: " + symbol);
+            }
+            
+            // Fallback: intentar parsear como SymbolDataDTO original
             return objectMapper.readValue(response, SymbolDataDTO.class);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
             throw new RuntimeException("Error al consumir API para símbolo " + symbol + ": " + e.getMessage());
         }
+    }
+    
+    /**
+     * Convierte la respuesta de GLOBAL_QUOTE a SymbolDataDTO para mantener compatibilidad
+     */
+    private SymbolDataDTO convertGlobalQuoteToSymbolData(GlobalQuoteDTO globalQuoteResponse, String symbol) {
+        var quote = globalQuoteResponse.globalQuote();
+        
+        // Crear metadata con información del Global Quote
+        var metaData = new SymbolDataDTO.MetaData(
+            "Global Quote - Latest Price",
+            quote.symbol() != null ? quote.symbol() : symbol,
+            quote.latestTradingDay() != null ? quote.latestTradingDay() : java.time.LocalDate.now().toString(),
+            "Compact", 
+            "US/Eastern"
+        );
+        
+        // Crear entrada de serie temporal con los datos del último día
+        java.util.Map<String, SymbolDataDTO.DailyData> timeSeries = new java.util.HashMap<>();
+        
+        if (quote.latestTradingDay() != null) {
+            var dailyData = new SymbolDataDTO.DailyData(
+                quote.open() != null ? quote.open() : "0.00",
+                quote.high() != null ? quote.high() : "0.00", 
+                quote.low() != null ? quote.low() : "0.00",
+                quote.price() != null ? quote.price() : "0.00",
+                quote.volume() != null ? quote.volume() : "0"
+            );
+            
+            timeSeries.put(quote.latestTradingDay(), dailyData);
+        }
+        
+        return new SymbolDataDTO(metaData, timeSeries);
     }
 
     @Override
