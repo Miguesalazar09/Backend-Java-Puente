@@ -51,6 +51,11 @@ public class JpaUserRepository implements UserRepository {
         springRepo.deleteById(id);
     }
 
+    @Override
+    public boolean existsByEmail(String email) {
+        return springRepo.existsByEmail(email);
+    }
+
     private User toModel(UserEntity entity) {
         return new User(entity.getId(), entity.getName(), entity.getEmail(), entity.getPass(), entity.getRole());
     }

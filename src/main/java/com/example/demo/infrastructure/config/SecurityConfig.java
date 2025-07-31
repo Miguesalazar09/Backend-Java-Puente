@@ -38,6 +38,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN") // Solo admins pueden ver la lista
                 .requestMatchers("/api/users/admin").permitAll() // Permitir registro de admin por ahora
                 .requestMatchers("/api/admin/**").hasRole("ADMIN") // Solo admins pueden acceder
+                .requestMatchers("/api/external/**").authenticated() // Endpoints de APIs externas requieren autenticación
+                .requestMatchers("/api/favorites/**").authenticated() // Endpoints de favoritos requieren autenticación
                 .anyRequest().authenticated() // Cambiado de .permitAll() a .authenticated()
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

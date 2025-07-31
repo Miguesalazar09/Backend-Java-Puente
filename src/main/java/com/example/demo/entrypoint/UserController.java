@@ -3,6 +3,8 @@ package com.example.demo.entrypoint;
 import com.example.demo.application.usecase.UserService;
 import com.example.demo.application.usecase.UserService.ProfileUpdateResult;
 import com.example.demo.domain.model.User;
+import com.example.demo.domain.port.UserRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -12,9 +14,11 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final UserRepository userRepository;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, UserRepository userRepository) {
         this.userService = userService;
+        this.userRepository = userRepository;
     }
 
     @PostMapping
@@ -25,8 +29,49 @@ public class UserController {
                 .body(new ErrorResponse(false, "Error: No se permite especificar el rol en el registro de usuarios. Los usuarios se registran automáticamente con rol USER."));
         }
         
+        // Validaciones de campos obligatorios
+        if (dto.name() == null || dto.name().trim().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(false, "Error: El nombre es obligatorio"));
+        }
+        
+        if (dto.email() == null || dto.email().trim().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(false, "Error: El email es obligatorio"));
+        }
+        
+        if (dto.password() == null || dto.password().trim().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(false, "Error: La contraseña es obligatoria"));
+        }
+
+        // Validar que el email no exista antes de intentar crear el usuario
+        if (userRepository.existsByEmail(dto.email().trim())) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(false, "Error: Ya existe un usuario con el email: " + dto.email().trim()));
+        }
+        
         try {
-            User newUser = userService.register(dto.name(), dto.email(), dto.password());
+            User newUser = userService.register(dto.name().trim(), dto.email().trim(), dto.password());
+            return ResponseEntity.status(HttpStatus.CREATED).body(newUser);
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage().contains("ya existe")) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(new ErrorResponse(false, "Error: " + e.getMessage()));
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(false, "Error: " + e.getMessage()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse(false, "Error interno: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/admin")
+    public ResponseEntity<?> registerAdmin(@RequestBody UserDTO dto) {
+        try {
+            User newUser = userService.register(dto.name(), dto.email(), dto.password(), 
+                com.example.demo.domain.model.Role.ADMIN);
             return ResponseEntity.ok(newUser);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()

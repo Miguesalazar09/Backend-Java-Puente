@@ -45,3 +45,16 @@ Dockerfile
 
 # Password files
 PasswordHasher.java
+
+# Environment variables and secrets
+.env
+.env.local
+.env.production
+.env.staging
+*.key
+*.pem
+secrets/
+
+# API Keys and configuration files with sensitive data
+application-secrets.yml
+application-local.yml

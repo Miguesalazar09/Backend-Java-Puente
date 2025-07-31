@@ -46,7 +46,7 @@ public class UserService {
     public void deleteUser(UUID id) {
         // Verificar que el usuario existe antes de eliminarlo
         if (!userRepository.findById(id).isPresent()) {
-            throw new RuntimeException("User not found with id: " + id);
+            throw new IllegalArgumentException("User not found with id: " + id);
         }
         userRepository.deleteById(id);
     }
@@ -54,7 +54,7 @@ public class UserService {
     public User updateUser(UUID id, String name, String email, String password, Role role) {
         // Verificar que el usuario existe
         User existingUser = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + id));
         
         // Validaciones
         if (name != null && name.trim().isEmpty()) {
@@ -159,7 +159,7 @@ public class UserService {
 
     public User getUserById(UUID id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + id));
     }
 
     public User getUserByEmail(String email) {

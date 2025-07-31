@@ -1,6 +1,8 @@
 package com.example.demo.infrastructure.config;
 
+import com.example.demo.application.usecase.FavoriteService;
 import com.example.demo.application.usecase.UserService;
+import com.example.demo.domain.port.FavoriteRepository;
 import com.example.demo.domain.port.UserRepository;
 import com.example.demo.infrastructure.security.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
@@ -12,5 +14,10 @@ public class BeanConfig {
     @Bean
     public UserService userService(UserRepository userRepository, CustomUserDetailsService userDetailsService) {
         return new UserService(userRepository, userDetailsService);
+    }
+
+    @Bean
+    public FavoriteService favoriteService(FavoriteRepository favoriteRepository) {
+        return new FavoriteService(favoriteRepository);
     }
 }

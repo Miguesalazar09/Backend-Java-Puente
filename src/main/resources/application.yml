@@ -11,3 +11,15 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+
+# Configuración de APIs externas
+external:
+  api:
+    # Alpha Vantage API - Datos financieros
+    alphavantage:
+      base-url: https://www.alphavantage.co
+      api-key: ${ALPHA_VANTAGE_API_KEY:demo}
+      timeout: 10000
+    # Configuración del scheduler (deshabilitado por defecto para evitar consumir API innecesariamente)
+    scheduler:
+      enabled: ${ENABLE_SCHEDULER:false}
