@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: api-gateway
+  
+  cloud:
+    compatibility-verifier:
+      enabled: false
+    gateway:
+      routes:
+        # User Service Routes
+        - id: user-service-auth
+          uri: http://user-service:8081
+          predicates:
+            - Path=/api/auth/**
+        - id: user-service-users
+          uri: http://user-service:8081
+          predicates:
+            - Path=/api/users/**
+        - id: user-service-admin
+          uri: http://user-service:8081
+          predicates:
+            - Path=/api/admin/**
+            
+        # Favorites Service Routes
+        - id: favorites-service
+          uri: http://favorites-service:8082
+          predicates:
+            - Path=/api/favorites/**
+            
+        # External Service Routes
+        - id: external-service
+          uri: http://external-service:8083
+          predicates:
+            - Path=/api/external/**
+
+eureka:
+  client:
+    enabled: false
+
+server:
+  port: 8080
+
+jwt:
+  secret: myVeryLongSecretKeyThatIs256BitsLong1234567890ABCDEFabcdef

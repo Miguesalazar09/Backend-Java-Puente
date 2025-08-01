@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: external-service
+  
+  cloud:
+    compatibility-verifier:
+      enabled: false
+
+eureka:
+  client:
+    enabled: false
+  
+  redis:
+    host: redis
+    port: 6379
+    timeout: 2000ms
+  
+  cache:
+    type: redis
+    redis:
+      time-to-live: 3600000  # 1 hour in milliseconds
+
+server:
+  port: 8083
+
+external:
+  api:
+    alphavantage:
+      base-url: https://www.alphavantage.co
+      api-key: ${ALPHA_VANTAGE_API_KEY:RJGRZOIRR7VTEBYB}
+      timeout: 10000

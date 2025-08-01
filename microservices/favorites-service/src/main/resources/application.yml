@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: favorites-service
+  
+  datasource:
+    url: jdbc:postgresql://postgres-favorites:5432/favorites_service_db
+    username: postgres
+    password: postgres123
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  cloud:
+    compatibility-verifier:
+      enabled: false
+
+eureka:
+  client:
+    enabled: false
+
+server:
+  port: 8082
+
+# JWT Configuration
+jwt:
+  secret: myVeryLongSecretKeyThatIs512BitsLongForHS512Algorithm1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+  expiration: 86400000
+
+# Feign client configurations
+external-service:
+  url: http://external-service:8083
+
+user-service:
+  url: http://user-service:8081

@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: user-service
+  
+  cloud:
+    compatibility-verifier:
+      enabled: false
+  
+  datasource:
+    url: jdbc:postgresql://postgres-user:5432/user_service_db
+    username: postgres
+    password: postgres123
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+eureka:
+  client:
+    enabled: false
+
+# Server Configuration
+server:
+  port: 8081
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+# JWT Configuration
+jwt:
+  secret: myVeryLongSecretKeyThatIs512BitsLongForHS512Algorithm1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+  expiration: 86400000
