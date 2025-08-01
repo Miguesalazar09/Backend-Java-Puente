@@ -2,6 +2,9 @@ spring:
   application:
     name: external-service
   
+  profiles:
+    active: mock  # Usar mock por defecto para evitar consumir API externa
+  
   cloud:
     compatibility-verifier:
       enabled: false

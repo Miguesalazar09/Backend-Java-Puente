@@ -3,13 +3,15 @@ package com.example.externalservice.application.usecase;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.regex.Pattern;
 
 @Service
-public class ExternalDataService {
+@Profile("!mock")
+public class ExternalDataService implements IStockService {
     
     private static final Pattern SYMBOL_PATTERN = Pattern.compile("^[A-Z0-9]{1,10}$");
     
@@ -28,6 +30,7 @@ public class ExternalDataService {
     }
     
     // @Cacheable(value = "symbolValidation", key = "#symbol.toUpperCase()")
+    @Override
     public ValidationResult validateSymbol(String symbol) {
         if (!isValidSymbolFormat(symbol)) {
             return new ValidationResult(false, "Formato de símbolo inválido");
@@ -50,6 +53,7 @@ public class ExternalDataService {
     }
     
     // @Cacheable(value = "symbolData", key = "#symbol.toUpperCase()")
+    @Override
     public String getSymbolData(String symbol) {
         if (!isValidSymbolFormat(symbol)) {
             throw new IllegalArgumentException("Formato de símbolo inválido");
@@ -90,6 +94,4 @@ public class ExternalDataService {
     public void evictAllCache() {
         // Método para limpiar toda la caché
     }
-
-    public record ValidationResult(boolean valid, String message) {}
 }

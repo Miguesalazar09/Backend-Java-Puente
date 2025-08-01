@@ -1,7 +1,8 @@
 package com.example.externalservice.entrypoint;
 
+import com.example.externalservice.application.usecase.IStockService;
+import com.example.externalservice.application.usecase.IStockService.ValidationResult;
 import com.example.externalservice.application.usecase.ExternalDataService;
-import com.example.externalservice.application.usecase.ExternalDataService.ValidationResult;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -9,16 +10,20 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/external")
 public class ExternalController {
 
-    private final ExternalDataService externalDataService;
+    private final IStockService stockService;
+    private final ExternalDataService externalDataService; // Opcional para métodos de caché
 
-    public ExternalController(ExternalDataService externalDataService) {
+    public ExternalController(IStockService stockService, 
+                            @org.springframework.beans.factory.annotation.Autowired(required = false) 
+                            ExternalDataService externalDataService) {
+        this.stockService = stockService;
         this.externalDataService = externalDataService;
     }
 
     @GetMapping("/validate/{symbol}")
     public ResponseEntity<Boolean> validateSymbol(@PathVariable String symbol) {
         try {
-            ValidationResult result = externalDataService.validateSymbol(symbol);
+            ValidationResult result = stockService.validateSymbol(symbol);
             return ResponseEntity.ok(result.valid());
         } catch (Exception e) {
             return ResponseEntity.ok(false);
@@ -28,7 +33,7 @@ public class ExternalController {
     @GetMapping("/instruments/{symbol}")
     public ResponseEntity<String> getSymbolData(@PathVariable String symbol) {
         try {
-            String data = externalDataService.getSymbolData(symbol);
+            String data = stockService.getSymbolData(symbol);
             return ResponseEntity.ok()
                 .header("Content-Type", "application/json")
                 .body(data);
@@ -64,8 +69,12 @@ public class ExternalController {
     @DeleteMapping("/cache/{symbol}")
     public ResponseEntity<String> evictCacheForSymbol(@PathVariable String symbol) {
         try {
-            externalDataService.evictCache(symbol);
-            return ResponseEntity.ok("Caché eliminada para el símbolo: " + symbol.toUpperCase());
+            if (externalDataService != null) {
+                externalDataService.evictCache(symbol);
+                return ResponseEntity.ok("Caché eliminada para el símbolo: " + symbol.toUpperCase());
+            } else {
+                return ResponseEntity.ok("Mock service - Sin caché para eliminar: " + symbol.toUpperCase());
+            }
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Error eliminando caché: " + e.getMessage());
         }
@@ -74,8 +83,12 @@ public class ExternalController {
     @DeleteMapping("/cache")
     public ResponseEntity<String> evictAllCache() {
         try {
-            externalDataService.evictAllCache();
-            return ResponseEntity.ok("Toda la caché ha sido eliminada");
+            if (externalDataService != null) {
+                externalDataService.evictAllCache();
+                return ResponseEntity.ok("Toda la caché ha sido eliminada");
+            } else {
+                return ResponseEntity.ok("Mock service - Sin caché para eliminar");
+            }
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Error eliminando caché: " + e.getMessage());
         }
@@ -85,7 +98,7 @@ public class ExternalController {
     @GetMapping("/debug/{symbol}")
     public ResponseEntity<String> debugSymbol(@PathVariable String symbol) {
         try {
-            String data = externalDataService.getSymbolData(symbol);
+            String data = stockService.getSymbolData(symbol);
             return ResponseEntity.ok(data);
         } catch (Exception e) {
             return ResponseEntity.ok("Error: " + e.getMessage());
