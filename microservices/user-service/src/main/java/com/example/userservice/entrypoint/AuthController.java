@@ -3,6 +3,7 @@ package com.example.userservice.entrypoint;
 import com.example.userservice.application.usecase.AuthService;
 import com.example.userservice.application.usecase.UserService;
 import com.example.userservice.domain.model.User;
+import com.example.userservice.domain.model.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,8 +19,20 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         try {
-            User user = userService.register(request.username, request.email, request.password);
-            return ResponseEntity.ok(new RegisterResponse(true, "Usuario registrado exitosamente", user.getId()));
+            // Determinar el role - por defecto USER si no se especifica
+            Role role = Role.USER;
+            if (request.role != null && !request.role.trim().isEmpty()) {
+                try {
+                    role = Role.valueOf(request.role.toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    return ResponseEntity.badRequest().body(
+                        new RegisterResponse(false, "Invalid role. Must be USER or ADMIN", null)
+                    );
+                }
+            }
+            
+            User user = userService.register(request.username, request.email, request.password, role);
+            return ResponseEntity.ok(new RegisterResponse(true, "Usuario " + role.name() + " registrado exitosamente", user.getId()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new RegisterResponse(false, e.getMessage(), null));
         }
@@ -42,6 +55,7 @@ public class AuthController {
         public String username;
         public String email;
         public String password;
+        public String role; // Nuevo campo para el role
     }
 
     public static class RegisterResponse {
