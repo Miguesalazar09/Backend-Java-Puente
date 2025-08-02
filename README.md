@@ -28,7 +28,7 @@ Plataforma financiera empresarial basada en microservicios que integra datos en 
         ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
         │                 │ │                 │ │                 │
         │  User Service   │ │External Service │ │Favorites Service│
-        │   (Port 8091)   │ │   (Port 8083)   │ │   (Port 8092)   │
+        │   (Port 8081)   │ │   (Port 8083)   │ │   (Port 8082)   │
         │                 │ │                 │ │                 │
         │ • JWT Auth      │ │ • Alpha Vantage │ │ • User Favorites│
         │ • User CRUD     │ │ • Symbol Valid. │ │ • Portfolio Mgmt│
@@ -52,9 +52,9 @@ Plataforma financiera empresarial basada en microservicios que integra datos en 
 | Servicio | Puerto | Responsabilidad | Base de Datos |
 |----------|--------|-----------------|---------------|
 | **API Gateway** | 8090 | Enrutamiento, CORS, Rate Limiting | - |
-| **User Service** | 8091 | Autenticación, gestión usuarios | PostgreSQL |
+| **User Service** | 8081 | Autenticación, gestión usuarios | PostgreSQL |
 | **External Service** | 8083 | Alpha Vantage, validación símbolos | Redis Cache |
-| **Favorites Service** | 8092 | Gestión favoritos por usuario | PostgreSQL |
+| **Favorites Service** | 8082 | Gestión favoritos por usuario | PostgreSQL |
 
 ## 🚀 Instalación y Ejecución
 
@@ -121,9 +121,9 @@ chmod +x test_favorites.sh && ./test_favorites.sh
 
 # Verificar salud de servicios
 curl http://localhost:8090/health
-curl http://localhost:8091/actuator/health
+curl http://localhost:8081/actuator/health
 curl http://localhost:8083/actuator/health
-curl http://localhost:8092/actuator/health
+curl http://localhost:8082/actuator/health
 ```
 
 ## 📡 APIs y Endpoints
@@ -154,9 +154,9 @@ curl -X POST http://localhost:8090/api/auth/register \
 
 | Método | Endpoint | Descripción | Cache TTL |
 |--------|----------|-------------|-----------|
-| `GET` | `/api/external/validate/{symbol}` | Validar símbolo bursátil | 1 hora |
-| `GET` | `/api/external/instruments/{symbol}` | Datos históricos completos | 1 hora |
-| `GET` | `/api/external/instruments/list` | Lista instrumentos disponibles | 1 hora |
+| `GET` | `/api/external/validate/{symbol}` | Validar símbolo bursátil | 5 minutos |
+| `GET` | `/api/external/instruments/{symbol}` | Datos históricos completos | 5 minutos |
+| `GET` | `/api/external/instruments/list` | Lista instrumentos disponibles | 5 minutos |
 
 #### Ejemplo de Consulta
 ```bash
@@ -200,13 +200,11 @@ curl -H "Authorization: $TOKEN" http://localhost:8090/api/favorites
 - **Escalabilidad**: Cada servicio puede escalar independientemente según demanda
 - **Mantenibilidad**: Equipos pueden trabajar en paralelo sin conflictos
 - **Tolerancia a Fallos**: Fallo en un servicio no afecta a los demás
-- **Tecnología Heterogénea**: Cada servicio puede usar la tecnología más adecuada
-
-**📊 Evidencia**: External Service maneja 100+ req/seg sin impactar User Service
+- **Tecnología Heterogénea**: Cada servicio puede usar la tecnología más adecuada 
 
 ### 2. **Cache Redis para Datos Financieros**
 
-**🔧 Decisión**: Redis como cache distribuido con TTL de 1 hora
+**🔧 Decisión**: Redis como cache distribuido con TTL de 5 minutos
 
 **✅ Justificación**:
 - **Costo API**: Alpha Vantage limita a 25 requests/día (gratuito)
@@ -276,17 +274,17 @@ Entities   UseCases   Controllers/Repos
 # User Service
 export JWT_SECRET=ultra-secure-secret-key-256-bits
 export JWT_EXPIRATION=86400000
-export DB_URL=jdbc:postgresql://localhost:5432/users_db
+export DB_URL=jdbc:postgresql://localhost:5435/users_db
 
 # External Service  
 export ALPHA_VANTAGE_API_KEY=RJGRZOIRR7VTEBYB
 export REDIS_HOST=localhost
 export REDIS_PORT=6379
-export CACHE_TTL=3600
+export CACHE_TTL=300
 
 # Favorites Service
-export DB_URL=jdbc:postgresql://localhost:5432/favorites_db
-export USER_SERVICE_URL=http://localhost:8091
+export DB_URL=jdbc:postgresql://localhost:5436/favorites_db
+export USER_SERVICE_URL=http://localhost:8081
 
 # API Gateway
 export CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080
@@ -310,7 +308,7 @@ services:
       POSTGRES_DB: users_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres123
-    ports: ["5433:5432"]
+    ports: ["5435:5432"]
     
   postgres-favorites:
     image: postgres:15-alpine  
@@ -318,21 +316,7 @@ services:
       POSTGRES_DB: favorites_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres123
-    ports: ["5434:5432"]
-```
-
-### � Monitoreo y Observabilidad
-
-```yaml
-# Actuator endpoints habilitados
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,metrics,prometheus,info
-  endpoint:
-    health:
-      show-details: always
+    ports: ["5436:5432"]
 ```
 
 ### 🔒 Configuración de Seguridad
@@ -367,128 +351,6 @@ app:
 # Test de sistema de favoritos
 ./test_favorites.sh
 ```
-
-### Métricas de Calidad
-
-| Métrica | Valor | Objetivo |
-|---------|-------|----------|
-| **Cobertura de Tests** | 85% | >80% |
-| **Tiempo de Respuesta** | <100ms | <200ms |
-| **Disponibilidad** | 99.9% | >99.5% |
-| **Cache Hit Ratio** | 95% | >90% |
-| **CPU Utilization** | <70% | <80% |
-| **Memory Usage** | <1GB | <1.5GB |
-
-## 🚀 Despliegue en Producción
-
-### 🐳 Containerización
-
-```bash
-# Build optimizado para producción
-docker build --target production -t finance-platform:latest .
-
-# Multi-stage build para tamaño mínimo
-FROM openjdk:17-jdk-alpine AS builder
-FROM openjdk:17-jre-alpine AS production
-```
-
-### ☁️ Kubernetes (K8s) Ready
-
-```yaml
-# k8s/deployment.yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: user-service
-spec:
-  replicas: 3
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
-```
-
-### 📈 Auto-Scaling
-
-```yaml
-# k8s/hpa.yaml  
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: user-service-hpa
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: user-service
-  minReplicas: 2
-  maxReplicas: 10
-  metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 70
-```
-
-## 🛡️ Seguridad
-
-### Implementaciones de Seguridad
-
-- **🔐 JWT Tokens**: HS512 con rotación automática
-- **🛡️ CORS**: Configuración restrictiva por entorno  
-- **⚡ Rate Limiting**: 100 req/min por IP
-- **🔒 HTTPS**: TLS 1.3 en producción
-- **🔑 Secrets**: Variables de entorno + Vault
-- **📊 Audit Logging**: Registro de acciones críticas
-
-### Headers de Seguridad
-
-```yaml
-security:
-  headers:
-    frame-options: DENY
-    content-type-options: nosniff
-    xss-protection: "1; mode=block"
-    referrer-policy: strict-origin-when-cross-origin
-    content-security-policy: "default-src 'self'"
-```
-
-## 📞 Soporte y Contacto
-
-### 🐛 Reportar Issues
-
-- **GitHub Issues**: [Crear nuevo issue](https://github.com/Miguesalazar09/spring-boot-jwt-auth/issues)
-- **Documentación**: Wikis del proyecto
-- **Tests**: Ejecutar `./test_validation_complete.sh`
-
-### 📚 Recursos Adicionales
-
-- **API Documentation**: OpenAPI/Swagger en `/swagger-ui.html`
-- **Health Checks**: `/actuator/health` en cada servicio
-- **Metrics**: `/actuator/prometheus` para Grafana
-- **Logs**: JSON structured logs con correlationId
-
-### 🏷️ Versionado
-
-```
-Versión Actual: v2.1.0
-- ✅ Microservicios completamente funcionales
-- ✅ Cache Redis implementado  
-- ✅ API Gateway configurado
-- ✅ Sistema de autenticación unificado
-- ✅ Integración Alpha Vantage real
-```
-
----
-
-**🚀 Desarrollado con Spring Boot 3.5.4 | Java 17 | PostgreSQL | Redis | Docker**
-
-| Método | Endpoint | Descripción | Roles |
-|--------|----------|-------------|-------|
-| GET | `/api/external/instruments/{symbol}` | Datos de símbolo | USER, ADMIN |
 
 ## 🔒 Validaciones Implementadas
 

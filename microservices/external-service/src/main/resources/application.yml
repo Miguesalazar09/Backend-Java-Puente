@@ -23,7 +23,7 @@ eureka:
   cache:
     type: redis
     redis:
-      time-to-live: 3600000  # 1 hour in milliseconds
+      time-to-live: 300000  # 5 minutes in milliseconds
       cache-null-values: false
 
 server:
