@@ -19,7 +19,9 @@ public class MockStockService implements IStockService {
         String[] validSymbols = {
             "AAPL", "GOOGL", "MSFT", "TSLA", "AMZN", "META", "NVDA", "NFLX",
             "UBER", "SPOT", "PYPL", "SQ", "TWTR", "SNAP", "AMD", "INTC",
-            "ORCL", "CRM", "ADBE", "NOW", "ZM", "SHOP", "ROKU", "PINS"
+            "ORCL", "CRM", "ADBE", "NOW", "ZM", "SHOP", "ROKU", "PINS",
+            "IBM", "JPM", "JNJ", "WMT", "PG", "V", "MA", "HD", "DIS", "KO",
+            "PFE", "XOM", "VZ", "CSCO", "PEP", "TMO", "ABT", "COST", "AVGO", "TXN"
         };
         
         for (String validSymbol : validSymbols) {
@@ -50,6 +52,16 @@ public class MockStockService implements IStockService {
             case "META" -> generateMockData("Meta Platforms Inc", "512.75", "516.40", "510.20", "514.30", "18943200");
             case "NVDA" -> generateMockData("NVIDIA Corporation", "875.30", "882.50", "870.40", "878.90", "42156700");
             case "NFLX" -> generateMockData("Netflix Inc", "485.60", "488.75", "482.40", "486.20", "12847500");
+            case "IBM" -> generateMockData("International Business Machines Corporation", "185.75", "188.20", "184.30", "186.90", "8765400");
+            case "JPM" -> generateMockData("JPMorgan Chase & Co.", "178.40", "180.15", "177.20", "179.30", "12543600");
+            case "JNJ" -> generateMockData("Johnson & Johnson", "162.80", "164.50", "161.90", "163.70", "9876500");
+            case "WMT" -> generateMockData("Walmart Inc.", "158.90", "160.45", "157.80", "159.60", "11234700");
+            case "PG" -> generateMockData("Procter & Gamble Company", "142.30", "143.80", "141.50", "142.95", "7654300");
+            case "V" -> generateMockData("Visa Inc.", "278.50", "281.20", "276.80", "279.40", "15432100");
+            case "MA" -> generateMockData("Mastercard Incorporated", "425.60", "428.90", "423.40", "426.80", "8765400");
+            case "HD" -> generateMockData("Home Depot Inc.", "365.20", "368.75", "363.40", "366.50", "12109800");
+            case "DIS" -> generateMockData("Walt Disney Company", "95.40", "97.20", "94.60", "96.30", "18765400");
+            case "KO" -> generateMockData("Coca-Cola Company", "59.80", "60.45", "59.20", "60.10", "14567800");
             default -> generateMockData(upperSymbol + " Corporation", "125.50", "127.80", "124.20", "126.35", "15234800");
         };
         

@@ -72,19 +72,35 @@ public class FavoriteController {
         }
     }
 
-    @DeleteMapping("/{symbol}")
-    public ResponseEntity<RemoveFavoriteResponse> removeFavorite(@PathVariable String symbol, Authentication authentication) {
-        UUID userId = getUserIdFromAuthentication(authentication);
-        
-        FavoriteResult result = favoriteService.removeFavorite(userId, symbol);
-        
-        if (result.success()) {
-            return ResponseEntity.ok(new RemoveFavoriteResponse(true, result.message()));
-        } else {
-            HttpStatus status = result.message().contains("no existe") ? 
-                HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
-            return ResponseEntity.status(status)
-                .body(new RemoveFavoriteResponse(false, result.message()));
+    @DeleteMapping("/{id}")
+    public ResponseEntity<RemoveFavoriteResponse> removeFavorite(@PathVariable UUID id, Authentication authentication) {
+        try {
+            UUID userId = getUserIdFromAuthentication(authentication);
+            
+            FavoriteResult result = favoriteService.removeFavoriteById(userId, id);
+            
+            if (result.success()) {
+                return ResponseEntity.ok(new RemoveFavoriteResponse(true, result.message()));
+            } else {
+                // Determinar el código de estado basado en el mensaje
+                HttpStatus status;
+                if (result.message().contains("no existe")) {
+                    status = HttpStatus.NOT_FOUND;
+                } else if (result.message().contains("No tienes permisos")) {
+                    status = HttpStatus.FORBIDDEN;
+                } else {
+                    status = HttpStatus.BAD_REQUEST;
+                }
+                
+                return ResponseEntity.status(status)
+                    .body(new RemoveFavoriteResponse(false, result.message()));
+            }
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new RemoveFavoriteResponse(false, "ID de favorito inválido: " + e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new RemoveFavoriteResponse(false, "Error interno: " + e.getMessage()));
         }
     }
 

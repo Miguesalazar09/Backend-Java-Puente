@@ -3,7 +3,7 @@ spring:
     name: external-service
   
   profiles:
-    active: mock  # Usar mock por defecto para evitar consumir API externa
+    active: prod  # Usar Alpha Vantage API para pruebas directas
   
   cloud:
     compatibility-verifier:
@@ -13,15 +13,18 @@ eureka:
   client:
     enabled: false
   
-  redis:
-    host: redis
-    port: 6379
-    timeout: 2000ms
+  data:
+    redis:
+      host: ${SPRING_REDIS_HOST:redis}
+      port: 6379
+      timeout: 2000ms
+      database: 0
   
   cache:
     type: redis
     redis:
       time-to-live: 3600000  # 1 hour in milliseconds
+      cache-null-values: false
 
 server:
   port: 8083
@@ -32,3 +35,9 @@ external:
       base-url: https://www.alphavantage.co
       api-key: ${ALPHA_VANTAGE_API_KEY:RJGRZOIRR7VTEBYB}
       timeout: 10000
+
+logging:
+  level:
+    com.example.externalservice: DEBUG
+    org.springframework.cache: DEBUG
+    root: INFO

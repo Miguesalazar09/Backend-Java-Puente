@@ -29,7 +29,7 @@ public class ExternalDataService implements IStockService {
         this.objectMapper = objectMapper;
     }
     
-    // @Cacheable(value = "symbolValidation", key = "#symbol.toUpperCase()")
+    @Cacheable(value = "symbolValidation", key = "#symbol.toUpperCase()")
     @Override
     public ValidationResult validateSymbol(String symbol) {
         if (!isValidSymbolFormat(symbol)) {
@@ -42,7 +42,13 @@ public class ExternalDataService implements IStockService {
             
             String response = restTemplate.getForObject(url, String.class);
             
-            if (response != null && response.contains("Global Quote")) {
+            // Verificar si hay errores o respuesta vacía
+            if (response == null || response.contains("Error Message")) {
+                return new ValidationResult(false, "Símbolo no encontrado en Alpha Vantage");
+            }
+            
+            // Verificar si contiene datos válidos del quote global
+            if (response.contains("Global Quote") && !response.contains("{}")) {
                 return new ValidationResult(true, "Símbolo válido");
             } else {
                 return new ValidationResult(false, "Símbolo no encontrado en Alpha Vantage");
@@ -52,7 +58,7 @@ public class ExternalDataService implements IStockService {
         }
     }
     
-    // @Cacheable(value = "symbolData", key = "#symbol.toUpperCase()")
+    @Cacheable(value = "symbolData", key = "#symbol.toUpperCase()")
     @Override
     public String getSymbolData(String symbol) {
         if (!isValidSymbolFormat(symbol)) {
@@ -68,8 +74,8 @@ public class ExternalDataService implements IStockService {
             
             // Verificar si hay errores en la respuesta
             if (response != null && (response.contains("Error Message") || 
-                                   response.contains("Information") || 
-                                   response.contains("Note"))) {
+                                   response.contains("Note: ") ||
+                                   response.contains("Thank you for using Alpha Vantage"))) {
                 throw new RuntimeException("API Error: " + response);
             }
             

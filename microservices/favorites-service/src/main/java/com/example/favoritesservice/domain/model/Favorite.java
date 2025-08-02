@@ -5,7 +5,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "favorites")
+@Table(name = "favorites", 
+       uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "symbol"}))
 public class Favorite {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -31,7 +32,7 @@ public class Favorite {
     }
 
     public Favorite(UUID userId, String symbol) {
-        this.id = UUID.randomUUID();
+        // NO asignar ID manualmente - dejar que JPA lo genere
         this.userId = userId;
         this.symbol = symbol;
         this.createdAt = LocalDateTime.now();
