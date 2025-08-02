@@ -72,8 +72,8 @@ docker-compose --version  # Docker Compose 2.0+
 
 ```bash
 # 1. Clonar el repositorio
-git clone https://github.com/Miguesalazar09/spring-boot-jwt-auth.git
-cd spring-boot-jwt-auth
+git clone https://github.com/Miguesalazar09/Backend-Java-Puente.git
+cd Backend-Java-Puente
 
 # 2. Configurar variables de entorno
 echo "ALPHA_VANTAGE_API_KEY=RJGRZOIRR7VTEBYB" >> .env
