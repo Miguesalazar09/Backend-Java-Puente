@@ -36,9 +36,9 @@ build/
 test_*.sh
 *.sh
 
-# Docker files
-docker-compose.yml
-Dockerfile
+# Docker runtime files (but allow Dockerfile and docker-compose.yml)
+.dockerignore
+docker-compose.override.yml
 
 # SQL files
 *.sql

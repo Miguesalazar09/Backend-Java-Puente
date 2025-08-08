@@ -1,10 +1,11 @@
 package com.example.externalservice.application.usecase;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 @Service
-@Profile("mock")
+@Profile({"mock", "mock-redis"})
 public class MockStockService implements IStockService {
     
     @Override
@@ -34,6 +35,7 @@ public class MockStockService implements IStockService {
     }
     
     @Override
+    @Cacheable(value = "symbolData", key = "#symbol.toUpperCase()")
     public String getSymbolData(String symbol) {
         ValidationResult validation = validateSymbol(symbol);
         if (!validation.valid()) {
@@ -41,6 +43,9 @@ public class MockStockService implements IStockService {
         }
         
         String upperSymbol = symbol.toUpperCase().trim();
+        
+        // Log para verificar que se está generando (no desde cache)
+        System.out.println("Generando datos mock para símbolo: " + upperSymbol + " (NO desde cache)");
         
         // Simular datos realistas pero ficticios para diferentes símbolos
         String mockData = switch (upperSymbol) {

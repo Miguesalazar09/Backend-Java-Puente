@@ -1,0 +1,137 @@
+services:
+  postgres-users:
+    image: postgres:15
+    container_name: postgres_users_db
+    environment:
+      POSTGRES_DB: users_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_users_data:/var/lib/postgresql/data
+      - ./scripts/init-users-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - microservices-network
+
+  postgres-favorites:
+    image: postgres:15
+    container_name: postgres_favorites_db
+    environment:
+      POSTGRES_DB: favorites_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_favorites_data:/var/lib/postgresql/data
+      - ./scripts/init-favorites-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - microservices-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis_cache
+    ports:
+      - "6379:6379"
+    networks:
+      - microservices-network
+
+  user-service:
+    build:
+      context: ./microservices/user-service
+    container_name: user-service
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_HOST=postgres-users
+      - DB_PORT=5432
+      - DB_NAME=users_db
+      - DB_USER=admin
+      - DB_PASSWORD=password123
+    depends_on:
+      - postgres-users
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  favorites-service:
+    build:
+      context: ./microservices/favorites-service
+    container_name: favorites-service
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_HOST=postgres-favorites
+      - DB_PORT=5432
+      - DB_NAME=favorites_db
+      - DB_USER=admin
+      - DB_PASSWORD=password123
+    depends_on:
+      - postgres-favorites
+      - user-service
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  external-service:
+    build:
+      context: ./microservices/external-service
+    container_name: external-service
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_PROFILES_ACTIVE=mock-redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - ALPHA_VANTAGE_API_KEY=${ALPHA_VANTAGE_API_KEY}
+    depends_on:
+      - redis
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  api-gateway:
+    build:
+      context: ./microservices/api-gateway
+    container_name: api-gateway
+    ports:
+      - "8090:8090"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - USER_SERVICE_URL=http://user-service:8081
+      - FAVORITES_SERVICE_URL=http://favorites-service:8082
+      - EXTERNAL_SERVICE_URL=http://external-service:8083
+    depends_on:
+      - user-service
+      - favorites-service
+      - external-service
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres_users_data:
+  postgres_favorites_data:
+
+networks:
+  microservices-network:
+    driver: bridge

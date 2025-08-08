@@ -9,13 +9,13 @@ public class User {
     private String pass;
     private Role role;
 
-    public User(UUID id, String name, String email, String pass) {
+    /* public User(UUID id, String name, String email, String pass) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.pass = pass;
         this.role = Role.USER; // Por defecto es USER
-    }
+    } */
 
     public User(UUID id, String name, String email, String pass, Role role) {
         this.id = id;

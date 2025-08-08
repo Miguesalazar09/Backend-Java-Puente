@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: external-service
+  
+  # Excluir configuraciones de Redis y Cache para mock
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.cache.CacheAutoConfiguration
+
+  cloud:
+    compatibility-verifier:
+      enabled: false
+
+eureka:
+  client:
+    enabled: false
+
+server:
+  port: 8083
+
+# Mock configuration - sin APIs externas
+external:
+  api:
+    alphavantage:
+      enabled: false
+      base-url: https://www.alphavantage.co
+      api-key: mock-key
+      timeout: 10000
+
+logging:
+  level:
+    com.example.externalservice: DEBUG
+    root: INFO

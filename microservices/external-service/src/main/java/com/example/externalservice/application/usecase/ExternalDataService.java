@@ -10,7 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.regex.Pattern;
 
 @Service
-@Profile("!mock")
+@Profile({"docker", "prod"})
 public class ExternalDataService implements IStockService {
     
     private static final Pattern SYMBOL_PATTERN = Pattern.compile("^[A-Z0-9]{1,10}$");

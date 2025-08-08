@@ -28,16 +28,23 @@ public class UserService {
     }
 
     public User register(String name, String email, String password, Role role) {
-        // Validaciones
+        
+        // Validar password
         if (password == null || password.trim().isEmpty()) {
             throw new IllegalArgumentException("Password cannot be null or empty");
         }
+
+        // Validar email  
         if (email == null || email.trim().isEmpty()) {
             throw new IllegalArgumentException("Email cannot be null or empty");
         }
+
+        // Validar name
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Name cannot be null or empty");
         }
+
+        // Validar role
         if (role == null) {
             throw new IllegalArgumentException("Role cannot be null");
         }
