@@ -17,6 +17,12 @@ spring:
             - Path=/api/users/**
           filters:
             - StripPrefix=0
+        - id: user-service-admin
+          uri: ${USER_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/admin/**
+          filters:
+            - StripPrefix=0
         - id: favorites-service
           uri: ${FAVORITES_SERVICE_URL:http://localhost:8082}
           predicates:
