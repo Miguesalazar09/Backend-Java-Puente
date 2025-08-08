@@ -47,7 +47,7 @@ docker-compose.override.yml
 PasswordHasher.java
 
 # Environment variables and secrets
-.env
+# .env  # Comentado para permitir subir .env con API key de demo
 .env.local
 .env.production
 .env.staging
